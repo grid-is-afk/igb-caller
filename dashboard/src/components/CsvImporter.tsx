@@ -37,7 +37,7 @@ export function CsvImporter({ isOpen, onClose, onImportComplete, defaultDate }: 
         const file = e.target.files?.[0];
         if (!file) return;
 
-        Papa.parse(file, {
+        Papa.parse<CsvRow>(file, {
             header: true,
             skipEmptyLines: true,
             complete: (results) => {
