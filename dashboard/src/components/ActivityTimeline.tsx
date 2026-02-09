@@ -81,11 +81,11 @@ export function ActivityTimeline() {
                             {/* Icon */}
                             <div className={`
                                 w-6 h-6 rounded-full flex items-center justify-center shrink-0 z-10
-                                ${log.outcome === "Success" ? "bg-green-500/15 text-green-400 ring-1 ring-green-500/20" :
+                                ${["Success", "Paid", "Completed"].includes(log.outcome) ? "bg-green-500/15 text-green-400 ring-1 ring-green-500/20" :
                                     log.outcome === "Voicemail" ? "bg-orange-500/15 text-orange-400 ring-1 ring-orange-500/20" :
                                         "bg-red-500/15 text-red-400 ring-1 ring-red-500/20"}
                             `}>
-                                {log.outcome === "Success" ? <Check size={11} strokeWidth={3} /> :
+                                {["Success", "Paid", "Completed"].includes(log.outcome) ? <Check size={11} strokeWidth={3} /> :
                                     log.outcome === "Voicemail" ? <Voicemail size={11} /> :
                                         <X size={11} strokeWidth={3} />}
                             </div>
@@ -100,7 +100,7 @@ export function ActivityTimeline() {
                                 </div>
                                 <p className="text-[11px] text-neutral-500">
                                     <span className={`font-medium ${
-                                        log.outcome === "Success" ? "text-green-400/70" :
+                                        ["Success", "Paid", "Completed"].includes(log.outcome) ? "text-green-400/70" :
                                         log.outcome === "Voicemail" ? "text-orange-400/70" : "text-red-400/70"
                                     }`}>{log.outcome}</span>
                                     {log.duration && <span className="ml-1 text-neutral-600">· {log.duration}s</span>}

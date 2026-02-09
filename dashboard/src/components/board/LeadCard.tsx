@@ -13,8 +13,8 @@ interface LeadCardProps {
 
 export function LeadCard({ contact, onCall, onEdit, onReset }: LeadCardProps) {
     const isCalling = contact.lastOutcome === "Calling...";
-    const isSuccess = contact.lastOutcome === "Success";
-    const isFailed = contact.lastOutcome === "Failed";
+    const isSuccess = ["Success", "Paid", "Completed"].includes(contact.lastOutcome || "");
+    const isFailed = ["Failed", "Dispute", "No Answer"].includes(contact.lastOutcome || "");
 
     return (
         <motion.div
