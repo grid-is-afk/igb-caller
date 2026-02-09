@@ -1,0 +1,194 @@
+{
+  "name": "igb-coldcaller-v4-crm-integrated",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "trigger-call",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "webhook-trigger",
+      "name": "CRM Trigger"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.retellai.com/v2/create-phone-call",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer key_fb693b11b9ad07983f14d8643a96"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from_number\": \"+63822293615\",\n  \"to_number\": \"+63{{ $json.phone_number }}\",\n  \"call_type\": \"phone_call\",\n  \"override_agent_id\": \"agent_a817477ae1528c916062e086d2\",\n  \"retell_llm_dynamic_variables\": {\n    \"Client_Name\": \"{{ $json.client_name }}\",\n    \"Invoice_Amount\": \"{{ $json.invoice_amount }}\",\n    \"Services_Rendered\": \"{{ $json.services }}\",\n    \"Phone_Number\": \"+63{{ $json.phone_number }}\"\n  },\n  \"metadata\": {\n    \"contact_id\": \"{{ $json.contact_id }}\",\n    \"callback_url\": \"{{ $json.callback_url }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        300,
+        0
+      ],
+      "id": "retell-create-call",
+      "name": "Retell Create Call"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "retell-callback",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "id": "webhook-inbound",
+      "name": "Retell Callback"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.body?.event }}",
+                    "rightValue": "call_analyzed",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "leftValue": "={{ $json.body?.event }}",
+                    "rightValue": "call_ended",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              }
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        250,
+        300
+      ],
+      "id": "check-event",
+      "name": "Is Call Analyzed?"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Handle both 'call_ended' and 'call_analyzed'\n\nconst body = $input.item.json.body;\nconst callData = body.call || {};\nconst analysis = body.call_analysis || {};\n\n// Metadata is usually inside the 'call' object\nconst metadata = callData.metadata || body.metadata || {};\nconst transcript = body.transcript || callData.transcript || \"\";\n\n// Determine outcome\nlet outcome = \"Completed\"; // Default for call_ended\n\nif (body.event === \"call_analyzed\") {\n    if (analysis.user_sentiment === \"Positive\") outcome = \"Success\";\n    else if (analysis.user_sentiment === \"Negative\") outcome = \"Failed\";\n    else outcome = \"Neutral\";\n}\n\nreturn {\n  contactId: metadata.contact_id,\n  callbackUrl: metadata.callback_url,\n  outcome: outcome,\n  transcript: transcript,\n  paymentDate: transcript.match(/pay on (\\w+ \\d+)/i)?.[1] || null,\n  paymentAmount: transcript.match(/(\\$?\\d+)/)?.[1] || null\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        500,
+        300
+      ],
+      "id": "ai-extractor",
+      "name": "AI Extractor (Simulated)"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.callbackUrl }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contactId\": \"{{ $json.contactId }}\",\n  \"outcome\": \"{{ $json.outcome }}\",\n  \"transcript\": \"{{ $json.transcript }}\",\n  \"paymentDate\": \"{{ $json.paymentDate }}\",\n  \"paymentAmount\": \"{{ $json.paymentAmount }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        800,
+        300
+      ],
+      "id": "send-to-crm",
+      "name": "Send to CRM"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "CRM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Retell Create Call",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retell Callback": {
+      "main": [
+        [
+          {
+            "node": "Is Call Analyzed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Call Analyzed?": {
+      "main": [
+        [
+          {
+            "node": "AI Extractor (Simulated)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Extractor (Simulated)": {
+      "main": [
+        [
+          {
+            "node": "Send to CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "v4-final",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "crm-workflow-v4"
+}

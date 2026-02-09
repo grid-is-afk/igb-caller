@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Contact {
+  id              String    @id @default(uuid())
+  name            String
+  phoneNumber     String
+  
+  // Campaign Details
+  nextCallDate    DateTime?
+  servicesOffered String?
+  billOrPayment   String?   // "Invoice Amount" or similar
+  
+  // Outcome Tracking
+  lastOutcome     String?   // "Success", "Failed", "Voicemail", etc.
+  transcript      String?   // Store full transcript if needed
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  logs            CallLog[]
+}
+
+model CallLog {
+  id          String   @id @default(uuid())
+  contactId   String
+  contact     Contact  @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  
+  outcome     String   // Success, Failed, etc.
+  transcript  String?
+  duration    Int?     // In seconds
+  createdAt   DateTime @default(now())
+}
+
+model Admin {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}

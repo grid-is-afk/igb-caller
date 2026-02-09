@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+
+  --color-background: #050505;
+  --color-foreground: #fafafa;
+
+  --color-card: #0a0a0a;
+  --color-card-border: #262626;
+
+  --color-primary: #06b6d4;
+  /* Cyan-500 */
+  --color-primary-glow: rgba(6, 182, 212, 0.15);
+
+  --color-success: #22c55e;
+  --color-danger: #ef4444;
+}
+
+/* Base Reset */
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Utilities */
+@layer utilities {
+  .neon-card-base {
+    background-color: var(--color-card);
+    border: 1px solid var(--color-card-border);
+    transition: all 0.3s ease;
+  }
+
+  .neon-card-hover:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 20px var(--color-primary-glow);
+  }
+}
