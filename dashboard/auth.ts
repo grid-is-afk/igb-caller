@@ -10,8 +10,10 @@ async function getUser(username: string) {
         const user = await prisma.admin.findUnique({ where: { username } });
         return user;
     } catch (error) {
-        console.error('Failed to fetch user:', error);
-        throw new Error('Failed to fetch user.');
+        console.error('Failed to fetch user. DB error:', error);
+        console.error('DATABASE_URL set:', !!process.env.DATABASE_URL);
+        console.error('DIRECT_URL set:', !!process.env.DIRECT_URL);
+        throw new Error(`Failed to fetch user: ${error instanceof Error ? error.message : 'unknown'}`);
     }
 }
 
