@@ -73,7 +73,7 @@ export function ContactModal({ isOpen, onClose, onSubmit, initialData, defaultDa
                             defaultValue={initialData?.phoneNumber}
                             required
                             className="w-full bg-[#111] border border-[#262626] rounded px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
-                            placeholder="+1234567890"
+                            placeholder="+639980670131"
                         />
                     </div>
 
@@ -94,7 +94,7 @@ export function ContactModal({ isOpen, onClose, onSubmit, initialData, defaultDa
                                 name="billOrPayment"
                                 defaultValue={initialData?.billOrPayment || ""}
                                 className="w-full bg-[#111] border border-[#262626] rounded px-3 py-2 text-white focus:outline-none focus:border-cyan-500"
-                                placeholder="$500.00"
+                                placeholder="₱500.00"
                             />
                         </div>
                         <div className="space-y-2">
