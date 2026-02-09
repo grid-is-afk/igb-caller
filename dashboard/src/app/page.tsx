@@ -103,6 +103,33 @@ export default function ContactsPage() {
     }
   };
 
+  // Call All: Sequentially trigger calls for every contact in the list
+  const handleCallAll = async (ids: string[]) => {
+    if (!confirm(`Trigger calls for ${ids.length} contact${ids.length !== 1 ? 's' : ''}? This will call them one after another.`)) return;
+    for (const id of ids) {
+      await handleCall(id);
+      // Small delay between calls so they don't all fire instantly
+      await new Promise(r => setTimeout(r, 1000));
+    }
+  };
+
+  // Clear Done: Reset completed contacts back to "Pending"
+  const handleClearDone = async (ids: string[]) => {
+    if (!confirm(`Reset ${ids.length} completed contact${ids.length !== 1 ? 's' : ''} back to Pending?`)) return;
+    try {
+      await Promise.all(ids.map(id =>
+        fetch(`/api/contacts/${id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lastOutcome: "Pending" })
+        })
+      ));
+      fetchContacts();
+    } catch (err) {
+      console.error("Clear column failed", err);
+    }
+  };
+
   return (
     <MainLayout rightPanel={<ActivityTimeline />}>
       <KanbanBoard
@@ -112,6 +139,8 @@ export default function ContactsPage() {
         onReset={handleReset}
         onAdd={() => { setEditingContact(null); setIsModalOpen(true); }}
         onImport={() => setIsImportOpen(true)}
+        onCallAll={handleCallAll}
+        onClearDone={handleClearDone}
       />
 
       <ContactModal
