@@ -46,14 +46,16 @@ export async function POST(req: Request) {
             return NextResponse.json({ message: "No data provided" }, { status: 400 });
         }
 
-        const validContacts = data.map((item: { name?: string; phoneNumber?: string; servicesOffered?: string; billOrPayment?: string; nextCallDate?: string; lastOutcome?: string }) => ({
-            name: item.name,
-            phoneNumber: item.phoneNumber,
-            servicesOffered: item.servicesOffered,
-            billOrPayment: item.billOrPayment,
-            nextCallDate: item.nextCallDate ? new Date(item.nextCallDate) : null,
-            lastOutcome: item.lastOutcome || "Pending",
-        })).filter(c => c.name && c.phoneNumber);
+        const validContacts = data
+            .filter((item: { name?: string; phoneNumber?: string }) => item.name && item.phoneNumber)
+            .map((item: { name?: string; phoneNumber?: string; servicesOffered?: string; billOrPayment?: string; nextCallDate?: string; lastOutcome?: string }) => ({
+                name: item.name as string,
+                phoneNumber: item.phoneNumber as string,
+                servicesOffered: item.servicesOffered,
+                billOrPayment: item.billOrPayment,
+                nextCallDate: item.nextCallDate ? new Date(item.nextCallDate) : null,
+                lastOutcome: item.lastOutcome || "Pending",
+            }));
 
         if (validContacts.length === 0) {
             return NextResponse.json({ error: "No valid contacts found (missing name or phone)" }, { status: 400 });
