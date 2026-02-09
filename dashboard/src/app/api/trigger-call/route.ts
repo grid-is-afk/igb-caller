@@ -13,7 +13,7 @@ export async function POST(req: Request) {
         if (!RETELL_API_KEY || !RETELL_AGENT_ID || !RETELL_FROM_NUMBER) {
             console.error("Missing Retell configuration in .env");
             return NextResponse.json({
-                error: "Retell API not configured. Check RETELL_API_KEY, RETELL_AGENT_ID, RETELL_FROM_NUMBER in .env"
+                error: "Retell API not configured. Add RETELL_API_KEY, RETELL_AGENT_ID, RETELL_FROM_NUMBER to environment variables."
             }, { status: 503 });
         }
 
@@ -26,25 +26,38 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Contact not found" }, { status: 404 });
         }
 
-        // 3. Build Retell API payload
-        const callbackUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhooks/outcome`;
-        
+        // 3. Format Invoice Date (readable format for the AI agent)
+        const invoiceDate = contact.createdAt
+            ? new Date(contact.createdAt).toLocaleDateString("en-US", {
+                year: "numeric", month: "long", day: "numeric"
+            })
+            : "N/A";
+
+        // 4. Build Retell API payload
+        // Variable names MUST match the {{Variable_Name}} placeholders in the Retell agent prompt
         const retellPayload = {
             from_number: RETELL_FROM_NUMBER,
             to_number: contact.phoneNumber,
             override_agent_id: RETELL_AGENT_ID,
             retell_llm_dynamic_variables: {
-                client_name: contact.name,
-                invoice_amount: contact.billOrPayment || "N/A",
-                services_rendered: contact.servicesOffered || "N/A",
+                Client_Name: contact.name,
+                Invoice_Amount: contact.billOrPayment || "N/A",
+                Invoice_Date: invoiceDate,
+                Services_Rendered: contact.servicesOffered || "N/A",
+                Phone_Number: contact.phoneNumber,
             },
             metadata: {
                 contact_id: contact.id,
-                callback_url: callbackUrl,
             }
         };
 
-        // 4. Call Retell API directly
+        console.log("Triggering Retell call:", {
+            to: contact.phoneNumber,
+            name: contact.name,
+            agent: RETELL_AGENT_ID,
+        });
+
+        // 5. Call Retell API directly
         const retellResponse = await fetch("https://api.retellai.com/v2/create-phone-call", {
             method: "POST",
             headers: {
@@ -57,13 +70,13 @@ export async function POST(req: Request) {
         if (!retellResponse.ok) {
             const errorText = await retellResponse.text();
             console.error("Retell API Error:", retellResponse.status, errorText);
-            throw new Error(`Retell API error: ${retellResponse.status}`);
+            throw new Error(`Retell API error (${retellResponse.status}): ${errorText}`);
         }
 
         const retellData = await retellResponse.json();
         console.log("Retell call initiated:", retellData.call_id);
 
-        // 5. Update Status to "Calling..."
+        // 6. Update Status to "Calling..."
         await prisma.contact.update({
             where: { id: contactId },
             data: { lastOutcome: "Calling..." }
