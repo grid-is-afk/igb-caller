@@ -11,12 +11,15 @@ export async function authenticate(
         await signIn('credentials', formData);
     } catch (error) {
         if (error instanceof AuthError) {
-            console.error('Auth error:', error.type, error.message);
+            console.error('Auth error type:', error.type);
+            console.error('Auth error cause:', error.cause);
             switch (error.type) {
                 case 'CredentialsSignin':
                     return 'Invalid credentials.';
+                case 'CallbackRouteError':
+                    return 'Authentication callback failed.';
                 default:
-                    return 'Something went wrong.';
+                    return `Auth error: ${error.type}`;
             }
         }
         throw error;
