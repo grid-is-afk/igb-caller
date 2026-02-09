@@ -10,17 +10,23 @@ export async function GET(req: Request) {
         let whereClause = {};
 
         if (dateParam) {
-            // Filter for the specific day (00:00 to 24:00 local time approximation of the user's intent)
-            // Since we store DateTime, we search for range.
+            // Filter for the specific day OR contacts with no date set
             const startOfDay = new Date(dateParam);
             const endOfDay = new Date(dateParam);
             endOfDay.setDate(endOfDay.getDate() + 1);
 
             whereClause = {
-                nextCallDate: {
-                    gte: startOfDay,
-                    lt: endOfDay,
-                }
+                OR: [
+                    {
+                        nextCallDate: {
+                            gte: startOfDay,
+                            lt: endOfDay,
+                        }
+                    },
+                    {
+                        nextCallDate: null, // Also show contacts with no scheduled date
+                    }
+                ]
             };
         }
 
@@ -53,7 +59,7 @@ export async function POST(req: Request) {
                 phoneNumber: item.phoneNumber as string,
                 servicesOffered: item.servicesOffered,
                 billOrPayment: item.billOrPayment,
-                nextCallDate: item.nextCallDate ? new Date(item.nextCallDate) : null,
+                nextCallDate: item.nextCallDate ? new Date(item.nextCallDate) : new Date(), // Default to now if not set
                 lastOutcome: item.lastOutcome || "Pending",
             }));
 
