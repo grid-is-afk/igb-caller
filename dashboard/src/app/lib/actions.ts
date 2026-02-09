@@ -8,14 +8,16 @@ export async function authenticate(
     formData: FormData,
 ) {
     try {
-        await signIn('credentials', formData);
+        await signIn('credentials', {
+            username: formData.get('username') as string,
+            password: formData.get('password') as string,
+            redirectTo: '/',
+        });
     } catch (error) {
         if (error instanceof AuthError) {
             const causeErr = (error.cause as { err?: Error })?.err;
             console.error('Auth error type:', error.type);
-            console.error('Auth error message:', error.message);
-            console.error('Auth error cause:', causeErr?.message || 'unknown');
-            console.error('Auth error stack:', causeErr?.stack || error.stack);
+            console.error('Auth error cause:', causeErr?.message || error.message);
             switch (error.type) {
                 case 'CredentialsSignin':
                     return 'Invalid credentials.';
