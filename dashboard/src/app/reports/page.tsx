@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { FileText, PhoneCall, CheckCircle2, XCircle, Archive, Download } from "lucide-react";
+import { FileText, PhoneCall, CheckCircle2, XCircle, Archive, Download, ChevronDown, ChevronUp } from "lucide-react";
 import { MainLayout } from "@/components/layout/MainLayout";
 
 interface CallLog {
@@ -156,9 +156,7 @@ export default function ReportsPage() {
                                                 </div>
                                             </div>
                                             {log.transcript && (
-                                                <div className="bg-[#0a0a0a] p-3 rounded text-neutral-400 font-mono text-xs overflow-x-auto whitespace-pre-wrap border border-[#262626]">
-                                                    {log.transcript.substring(0, 300)}...
-                                                </div>
+                                                <TranscriptBlock text={log.transcript} />
                                             )}
                                         </div>
                                     ))}
@@ -169,5 +167,31 @@ export default function ReportsPage() {
                 )}
             </div>
         </MainLayout>
+    );
+}
+
+function TranscriptBlock({ text }: { text: string }) {
+    const [expanded, setExpanded] = useState(false);
+    const isLong = text.length > 300;
+    const displayText = expanded || !isLong ? text : text.substring(0, 300) + "...";
+
+    return (
+        <div className="bg-[#0a0a0a] rounded border border-[#262626] overflow-hidden">
+            <div className="p-3 text-neutral-400 font-mono text-xs whitespace-pre-wrap">
+                {displayText}
+            </div>
+            {isLong && (
+                <button
+                    onClick={() => setExpanded(prev => !prev)}
+                    className="w-full flex items-center justify-center gap-1.5 py-2 text-[11px] font-medium text-cyan-400 hover:text-cyan-300 bg-[#0d0d0d] border-t border-[#1a1a1a] transition-colors"
+                >
+                    {expanded ? (
+                        <><ChevronUp size={12} /> Show Less</>
+                    ) : (
+                        <><ChevronDown size={12} /> Show Full Transcript</>
+                    )}
+                </button>
+            )}
+        </div>
     );
 }
