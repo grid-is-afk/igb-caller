@@ -10,8 +10,7 @@ export async function GET(req: Request) {
         let whereClause = {};
 
         if (dateParam) {
-            // Filter for the specific day OR contacts with no date set
-            const startOfDay = new Date(dateParam);
+            // Show contacts scheduled for today, overdue (past dates), or with no date
             const endOfDay = new Date(dateParam);
             endOfDay.setDate(endOfDay.getDate() + 1);
 
@@ -19,8 +18,7 @@ export async function GET(req: Request) {
                 OR: [
                     {
                         nextCallDate: {
-                            gte: startOfDay,
-                            lt: endOfDay,
+                            lt: endOfDay, // Today + all overdue past dates
                         }
                     },
                     {
