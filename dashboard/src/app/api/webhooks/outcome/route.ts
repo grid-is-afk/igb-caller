@@ -46,25 +46,44 @@ export async function POST(req: Request) {
             const callbackDate = customData.Callback_Date || customData.callback_date;
             const callSummary = callAnalysis.call_summary || customData.Call_Summary || customData.call_summary || "";
 
+            // Normalize Retell outcomes to our system values
+            // Retell agent prompt uses: Paid / Scheduled / Callback / Dispute / No Answer
+            // Our system uses:          Success / Scheduled / Callback / Failed / Voicemail / Completed
+            const normalizeOutcome = (raw: string): string => {
+                const map: Record<string, string> = {
+                    "paid": "Success",
+                    "success": "Success",
+                    "completed": "Success",
+                    "scheduled": "Scheduled",
+                    "callback": "Callback",
+                    "dispute": "Failed",
+                    "no answer": "Failed",
+                    "no_answer": "Failed",
+                    "failed": "Failed",
+                    "voicemail": "Voicemail",
+                };
+                return map[raw.toLowerCase().trim()] || raw;
+            };
+
             // Determine the outcome
             let outcome: string;
 
             if (retellOutcome) {
-                // Use Retell's extracted outcome directly
-                outcome = retellOutcome;
+                // Normalize Retell's extracted outcome
+                outcome = normalizeOutcome(retellOutcome);
             } else if (event === "call_analyzed" && callAnalysis.user_sentiment) {
                 // Fallback: use sentiment analysis
                 const sentiment = callAnalysis.user_sentiment;
                 if (sentiment === "Positive") outcome = "Success";
                 else if (sentiment === "Negative") outcome = "Failed";
-                else outcome = "Completed";
+                else outcome = "Success"; // Neutral sentiment after completed call = success
             } else {
                 // Fallback: use disconnection reason
                 const reason = callData.disconnection_reason;
                 if (reason === "user_hangup") outcome = "Failed";
-                else if (reason === "agent_hangup") outcome = "Completed";
+                else if (reason === "agent_hangup") outcome = "Success";
                 else if (reason === "voicemail_reached") outcome = "Voicemail";
-                else outcome = "Completed";
+                else outcome = "Success";
             }
 
             // Build the full summary with extracted data

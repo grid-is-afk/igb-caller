@@ -23,7 +23,7 @@ export default function TasksPage() {
                 // Usually "Tasks" = To Do.
                 const todo = data.filter(c =>
                     !c.lastOutcome ||
-                    ["Pending", "Scheduled", "Calling...", "Ringing"].includes(c.lastOutcome)
+                    ["Pending", "Scheduled", "Callback", "Calling...", "Ringing"].includes(c.lastOutcome)
                 );
                 setTasks(todo);
             }

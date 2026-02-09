@@ -26,12 +26,19 @@ export function KanbanBoard({ contacts, onCall, onEdit, onReset, onAdd, onImport
         "Review": "newest",
     });
 
-    // Filter logic
-    const todo = contacts.filter(c => !c.lastOutcome || c.lastOutcome === "Pending" || c.lastOutcome === "Scheduled");
-    const inProgress = contacts.filter(c => c.lastOutcome === "Calling..." || c.lastOutcome === "Ringing");
-    const done = contacts.filter(c => ["Success", "Failed", "Voicemail", "Completed"].includes(c.lastOutcome || ""));
+    // Outcome categories
+    const pendingOutcomes = ["Pending", "Scheduled", "Callback"];
+    const activeOutcomes = ["Calling...", "Ringing"];
+    const successOutcomes = ["Success", "Paid", "Completed"];
+    const failedOutcomes = ["Failed", "Dispute", "No Answer", "Voicemail"];
+    const doneOutcomes = [...successOutcomes, ...failedOutcomes];
 
-    const successCount = contacts.filter(c => c.lastOutcome === "Success").length;
+    // Filter logic
+    const todo = contacts.filter(c => !c.lastOutcome || pendingOutcomes.includes(c.lastOutcome));
+    const inProgress = contacts.filter(c => activeOutcomes.includes(c.lastOutcome || ""));
+    const done = contacts.filter(c => doneOutcomes.includes(c.lastOutcome || ""));
+
+    const successCount = contacts.filter(c => successOutcomes.includes(c.lastOutcome || "")).length;
     const successRate = contacts.length > 0 ? Math.round((successCount / contacts.length) * 100) : 0;
 
     // Sort helper
