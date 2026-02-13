@@ -140,19 +140,32 @@ export default function ReportsPage() {
                                         <div key={log.id} className="bg-[#111] border border-[#262626] rounded-lg p-4 hover:border-[#333] transition-colors">
                                             <div className="flex justify-between items-start mb-2">
                                                 <div className="flex items-center gap-3">
-                                                    <span className={`p-2 rounded-full ${log.outcome === 'Success' ? 'bg-green-900/20 text-green-400' :
-                                                        log.outcome === 'Failed' ? 'bg-red-900/20 text-red-400' : 'bg-[#262626] text-neutral-400'
+                                                    <span className={`p-2 rounded-full ${
+                                                        ["Success", "Paid"].includes(log.outcome) ? 'bg-green-900/20 text-green-400' :
+                                                        ["Failed", "Dispute", "No Answer"].includes(log.outcome) ? 'bg-red-900/20 text-red-400' :
+                                                        log.outcome === "Voicemail" ? 'bg-orange-900/20 text-orange-400' :
+                                                        log.outcome === "Completed" ? 'bg-cyan-900/20 text-cyan-400' :
+                                                        'bg-[#262626] text-neutral-400'
                                                         }`}>
-                                                        {log.outcome === 'Success' ? <CheckCircle2 size={16} /> :
-                                                            log.outcome === 'Failed' ? <XCircle size={16} /> : <PhoneCall size={16} />}
+                                                        {["Success", "Paid"].includes(log.outcome) ? <CheckCircle2 size={16} /> :
+                                                            ["Failed", "Dispute", "No Answer"].includes(log.outcome) ? <XCircle size={16} /> : <PhoneCall size={16} />}
                                                     </span>
                                                     <div>
                                                         <div className="font-medium text-white">{log.contact.name}</div>
                                                         <div className="text-xs text-neutral-500">{log.contact.phoneNumber}</div>
                                                     </div>
                                                 </div>
-                                                <div className="text-xs text-neutral-500">
-                                                    {new Date(log.createdAt).toLocaleTimeString()}
+                                                <div className="flex items-center gap-2">
+                                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                                                        ["Success", "Paid"].includes(log.outcome) ? "bg-green-900/20 text-green-400 border border-green-900/30" :
+                                                        ["Failed", "Dispute", "No Answer"].includes(log.outcome) ? "bg-red-900/20 text-red-400 border border-red-900/30" :
+                                                        log.outcome === "Voicemail" ? "bg-orange-900/20 text-orange-400 border border-orange-900/30" :
+                                                        log.outcome === "Completed" ? "bg-cyan-900/20 text-cyan-400 border border-cyan-900/30" :
+                                                        "bg-[#262626] text-neutral-400"
+                                                    }`}>{log.outcome}</span>
+                                                    <span className="text-xs text-neutral-500">
+                                                        {new Date(log.createdAt).toLocaleTimeString()}
+                                                    </span>
                                                 </div>
                                             </div>
                                             {log.transcript && (
@@ -172,14 +185,51 @@ export default function ReportsPage() {
 
 function TranscriptBlock({ text }: { text: string }) {
     const [expanded, setExpanded] = useState(false);
-    const isLong = text.length > 300;
-    const displayText = expanded || !isLong ? text : text.substring(0, 300) + "...";
+
+    // Split analysis summary from full conversation transcript
+    const hasAnalysis = text.startsWith("[Analysis]");
+    let analysisPart = "";
+    let conversationPart = text;
+
+    if (hasAnalysis) {
+        const dividerIndex = text.indexOf("\n\n---\n\n");
+        if (dividerIndex !== -1) {
+            analysisPart = text.substring("[Analysis] ".length, dividerIndex);
+            conversationPart = text.substring(dividerIndex + "\n\n---\n\n".length);
+        } else {
+            analysisPart = text.substring("[Analysis] ".length);
+            conversationPart = "";
+        }
+    }
+
+    const isLong = conversationPart.length > 400;
+    const displayConversation = expanded || !isLong ? conversationPart : conversationPart.substring(0, 400) + "...";
 
     return (
-        <div className="bg-[#0a0a0a] rounded border border-[#262626] overflow-hidden">
-            <div className="p-3 text-neutral-400 font-mono text-xs whitespace-pre-wrap">
-                {displayText}
-            </div>
+        <div className="bg-[#0a0a0a] rounded border border-[#262626] overflow-hidden mt-2">
+            {/* Analysis Summary */}
+            {analysisPart && (
+                <div className="px-3 py-2 bg-cyan-500/5 border-b border-[#1a1a1a] text-[11px] text-cyan-400/80 font-medium">
+                    {analysisPart.split(" | ").map((part, i) => (
+                        <span key={i} className="inline-block mr-3">
+                            {part}
+                        </span>
+                    ))}
+                </div>
+            )}
+
+            {/* Full Conversation Transcript */}
+            {conversationPart && (
+                <div className="p-3 text-neutral-400 font-mono text-xs whitespace-pre-wrap leading-relaxed">
+                    {displayConversation}
+                </div>
+            )}
+
+            {/* No transcript */}
+            {!conversationPart && !analysisPart && (
+                <div className="p-3 text-neutral-600 text-xs italic">No transcript available.</div>
+            )}
+
             {isLong && (
                 <button
                     onClick={() => setExpanded(prev => !prev)}

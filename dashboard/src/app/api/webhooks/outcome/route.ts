@@ -108,24 +108,33 @@ export async function POST(req: Request) {
                 outcome = "Completed";
             }
 
-            // Build the full summary with extracted data
+            // Build the analysis summary from extracted data
             const summaryParts: string[] = [];
             if (callSummary) summaryParts.push(`Summary: ${callSummary}`);
             if (agreedPaymentDate) summaryParts.push(`Payment Date: ${agreedPaymentDate}`);
             if (agreedPaymentAmount) summaryParts.push(`Payment Amount: ${agreedPaymentAmount}`);
             if (paymentMethod) summaryParts.push(`Method: ${paymentMethod}`);
             if (callbackDate) summaryParts.push(`Callback: ${callbackDate}`);
-            
-            const fullSummary = summaryParts.length > 0 
-                ? summaryParts.join(" | ") 
-                : transcript.substring(0, 500);
+            const analysisSummary = summaryParts.join(" | ");
+
+            // Build full transcript: analysis summary on top + full conversation below
+            let savedTranscript: string;
+            if (analysisSummary && transcript) {
+                savedTranscript = `[Analysis] ${analysisSummary}\n\n---\n\n${transcript}`;
+            } else if (transcript) {
+                savedTranscript = transcript;
+            } else if (analysisSummary) {
+                savedTranscript = analysisSummary;
+            } else {
+                savedTranscript = "No transcript available.";
+            }
 
             console.log(`Processing: contact=${contactId}, outcome=${outcome}, callback=${callbackDate}`);
 
             // Build update data for the contact
             const contactUpdate: Record<string, unknown> = {
                 lastOutcome: outcome,
-                transcript: fullSummary || transcript.substring(0, 500),
+                transcript: savedTranscript,
             };
 
             // If Retell extracted a callback date, update nextCallDate
@@ -150,7 +159,7 @@ export async function POST(req: Request) {
                     data: {
                         contactId: contactId,
                         outcome: outcome,
-                        transcript: fullSummary || transcript.substring(0, 500),
+                        transcript: savedTranscript,
                         duration: duration,
                     }
                 })
