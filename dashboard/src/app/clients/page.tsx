@@ -158,12 +158,13 @@ export default function ClientsPage() {
 }
 
 function StatusBadge({ status }: { status: string | null }) {
-    const successOutcomes = ["Success", "Paid", "Completed"];
+    const successOutcomes = ["Success", "Paid"];
     const failedOutcomes = ["Failed", "Dispute", "No Answer"];
 
     if (!status || status === "Pending") return <span className="text-neutral-500 text-sm">Pending</span>;
     if (successOutcomes.includes(status)) return <span className="text-green-400 bg-green-900/20 px-2 py-0.5 rounded text-xs font-bold border border-green-900/30">{status}</span>;
     if (failedOutcomes.includes(status)) return <span className="text-red-400 bg-red-900/20 px-2 py-0.5 rounded text-xs font-bold border border-red-900/30">{status}</span>;
+    if (status === "Completed") return <span className="text-cyan-400 bg-cyan-500/20 px-2 py-0.5 rounded text-xs font-bold border border-cyan-500/30">Completed</span>;
     if (status === "Calling...") return <span className="text-cyan-400 bg-cyan-500/20 px-2 py-0.5 rounded text-xs font-bold border border-cyan-500/30 animate-pulse">Calling...</span>;
     if (status === "Voicemail") return <span className="text-orange-400 bg-orange-900/20 px-2 py-0.5 rounded text-xs font-bold border border-orange-900/30">Voicemail</span>;
     return <span className="text-neutral-400 bg-[#262626] px-2 py-0.5 rounded text-xs font-medium">{status}</span>;

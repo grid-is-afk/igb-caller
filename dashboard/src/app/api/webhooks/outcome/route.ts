@@ -46,14 +46,13 @@ export async function POST(req: Request) {
             const callbackDate = customData.Callback_Date || customData.callback_date;
             const callSummary = callAnalysis.call_summary || customData.Call_Summary || customData.call_summary || "";
 
-            // Normalize Retell outcomes to our system values
+            // Normalize Retell's extracted outcomes to our system values
             // Retell agent prompt uses: Paid / Scheduled / Callback / Dispute / No Answer
-            // Our system uses:          Success / Scheduled / Callback / Failed / Voicemail / Completed
+            // Our system uses:          Paid / Scheduled / Callback / Failed / Voicemail / Completed
             const normalizeOutcome = (raw: string): string => {
                 const map: Record<string, string> = {
-                    "paid": "Success",
-                    "success": "Success",
-                    "completed": "Success",
+                    "paid": "Paid",
+                    "success": "Paid",
                     "scheduled": "Scheduled",
                     "callback": "Callback",
                     "dispute": "Failed",
@@ -65,25 +64,30 @@ export async function POST(req: Request) {
                 return map[raw.toLowerCase().trim()] || raw;
             };
 
-            // Determine the outcome
+            // Determine the outcome based on event type
             let outcome: string;
 
-            if (retellOutcome) {
-                // Normalize Retell's extracted outcome
-                outcome = normalizeOutcome(retellOutcome);
-            } else if (event === "call_analyzed" && callAnalysis.user_sentiment) {
-                // Fallback: use sentiment analysis
-                const sentiment = callAnalysis.user_sentiment;
-                if (sentiment === "Positive") outcome = "Success";
-                else if (sentiment === "Negative") outcome = "Failed";
-                else outcome = "Success"; // Neutral sentiment after completed call = success
-            } else {
-                // Fallback: use disconnection reason
+            if (event === "call_ended") {
+                // call_ended fires BEFORE analysis — just mark as "Completed" (call finished)
+                // The real outcome will come from call_analyzed later
                 const reason = callData.disconnection_reason;
-                if (reason === "user_hangup") outcome = "Failed";
-                else if (reason === "agent_hangup") outcome = "Success";
-                else if (reason === "voicemail_reached") outcome = "Voicemail";
-                else outcome = "Success";
+                if (reason === "voicemail_reached") outcome = "Voicemail";
+                else if (reason === "user_hangup" || reason === "dial_no_answer") outcome = "Failed";
+                else outcome = "Completed"; // Neutral — waiting for analysis
+            } else if (event === "call_analyzed") {
+                // call_analyzed has the REAL outcome from post-call extraction
+                if (retellOutcome) {
+                    outcome = normalizeOutcome(retellOutcome);
+                } else if (callAnalysis.user_sentiment) {
+                    const sentiment = callAnalysis.user_sentiment;
+                    if (sentiment === "Positive") outcome = "Paid";
+                    else if (sentiment === "Negative") outcome = "Failed";
+                    else outcome = "Completed";
+                } else {
+                    outcome = "Completed";
+                }
+            } else {
+                outcome = "Completed";
             }
 
             // Build the full summary with extracted data

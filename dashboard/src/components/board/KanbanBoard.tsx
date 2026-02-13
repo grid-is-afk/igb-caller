@@ -29,9 +29,9 @@ export function KanbanBoard({ contacts, onCall, onEdit, onReset, onAdd, onImport
     // Outcome categories
     const pendingOutcomes = ["Pending", "Scheduled", "Callback"];
     const activeOutcomes = ["Calling...", "Ringing"];
-    const successOutcomes = ["Success", "Paid", "Completed"];
+    const successOutcomes = ["Success", "Paid"];
     const failedOutcomes = ["Failed", "Dispute", "No Answer", "Voicemail"];
-    const doneOutcomes = [...successOutcomes, ...failedOutcomes];
+    const doneOutcomes = [...successOutcomes, ...failedOutcomes, "Completed"];
 
     // Filter logic
     const todo = contacts.filter(c => !c.lastOutcome || pendingOutcomes.includes(c.lastOutcome));

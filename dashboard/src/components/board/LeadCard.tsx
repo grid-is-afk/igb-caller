@@ -13,7 +13,8 @@ interface LeadCardProps {
 
 export function LeadCard({ contact, onCall, onEdit, onReset }: LeadCardProps) {
     const isCalling = contact.lastOutcome === "Calling...";
-    const isSuccess = ["Success", "Paid", "Completed"].includes(contact.lastOutcome || "");
+    const isSuccess = ["Success", "Paid"].includes(contact.lastOutcome || "");
+    const isCompleted = contact.lastOutcome === "Completed"; // Neutral — call ended, no clear outcome yet
     const isFailed = ["Failed", "Dispute", "No Answer"].includes(contact.lastOutcome || "");
 
     return (
@@ -31,7 +32,9 @@ export function LeadCard({ contact, onCall, onEdit, onReset }: LeadCardProps) {
                         ? "bg-green-500/[0.04] border-green-500/15"
                         : isFailed
                             ? "bg-red-500/[0.04] border-red-500/15"
-                            : "bg-[#0c0c0c] border-[#1a1a1a] hover:border-[#262626]"
+                            : isCompleted
+                                ? "bg-cyan-500/[0.03] border-cyan-500/10"
+                                : "bg-[#0c0c0c] border-[#1a1a1a] hover:border-[#262626]"
                 }
             `}
         >
@@ -41,6 +44,7 @@ export function LeadCard({ contact, onCall, onEdit, onReset }: LeadCardProps) {
                         isCalling ? "bg-cyan-500 animate-pulse" 
                         : isSuccess ? "bg-green-500" 
                         : isFailed ? "bg-red-500"
+                        : isCompleted ? "bg-cyan-400"
                         : "bg-orange-400"
                     }`} />
                     <span className="text-[10px] font-semibold text-neutral-600 uppercase tracking-wider">
