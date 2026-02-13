@@ -7,15 +7,19 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         const { id } = await params;
         const body = await req.json();
 
+        // Build update data — only include fields that were actually sent
+        const updateData: Record<string, unknown> = {};
+        if (body.name !== undefined) updateData.name = body.name;
+        if (body.phoneNumber !== undefined) updateData.phoneNumber = body.phoneNumber;
+        if (body.servicesOffered !== undefined) updateData.servicesOffered = body.servicesOffered;
+        if (body.billOrPayment !== undefined) updateData.billOrPayment = body.billOrPayment;
+        if (body.nextCallDate !== undefined) updateData.nextCallDate = body.nextCallDate ? new Date(body.nextCallDate) : null;
+        if (body.lastOutcome !== undefined) updateData.lastOutcome = body.lastOutcome;
+        if (body.transcript !== undefined) updateData.transcript = body.transcript;
+
         const contact = await prisma.contact.update({
             where: { id },
-            data: {
-                name: body.name,
-                phoneNumber: body.phoneNumber,
-                servicesOffered: body.servicesOffered,
-                billOrPayment: body.billOrPayment,
-                nextCallDate: body.nextCallDate ? new Date(body.nextCallDate) : null,
-            },
+            data: updateData,
         });
         return NextResponse.json(contact);
     } catch {
