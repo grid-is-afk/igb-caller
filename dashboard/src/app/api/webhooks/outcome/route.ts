@@ -64,16 +64,34 @@ export async function POST(req: Request) {
                 return map[raw.toLowerCase().trim()] || raw;
             };
 
+            // Calculate call duration (in seconds)
+            const duration = callData.end_timestamp && callData.start_timestamp
+                ? Math.round((callData.end_timestamp - callData.start_timestamp) / 1000)
+                : null;
+
+            // Check if a real conversation happened
+            const hasTranscript = transcript && transcript.trim().length > 10;
+            const hasRealDuration = duration !== null && duration > 10; // more than 10 seconds
+            const conversationHappened = hasTranscript || hasRealDuration;
+
             // Determine the outcome based on event type
             let outcome: string;
 
             if (event === "call_ended") {
-                // call_ended fires BEFORE analysis — just mark as "Completed" (call finished)
-                // The real outcome will come from call_analyzed later
                 const reason = callData.disconnection_reason;
-                if (reason === "voicemail_reached") outcome = "Voicemail";
-                else if (reason === "user_hangup" || reason === "dial_no_answer") outcome = "Failed";
-                else outcome = "Completed"; // Neutral — waiting for analysis
+
+                if (reason === "voicemail_reached") {
+                    outcome = "Voicemail";
+                } else if (reason === "dial_no_answer") {
+                    // Phone rang but nobody picked up
+                    outcome = "No Answer";
+                } else if (!conversationHappened) {
+                    // Call connected briefly but no real conversation (hung up immediately, etc.)
+                    outcome = "No Answer";
+                } else {
+                    // A real conversation happened — wait for call_analyzed to set the real outcome
+                    outcome = "Completed";
+                }
             } else if (event === "call_analyzed") {
                 // call_analyzed has the REAL outcome from post-call extraction
                 if (retellOutcome) {
@@ -121,11 +139,6 @@ export async function POST(req: Request) {
                     console.warn("Could not parse callback date:", callbackDate);
                 }
             }
-
-            // Calculate call duration
-            const duration = callData.end_timestamp && callData.start_timestamp
-                ? Math.round((callData.end_timestamp - callData.start_timestamp) / 1000)
-                : null;
 
             // Update Contact AND Create Call Log in a transaction
             await prisma.$transaction([
